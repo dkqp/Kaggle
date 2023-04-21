@@ -137,6 +137,7 @@ def train_tensorboard_gradient_accumulation(
       device: torch.device,
       writer: SummaryWriter = None,
       accumulation_num: int = 2,
+      saving_max: bool = False,
       metric_learning: bool = False,
 ):
     results = {'train_loss': [],
@@ -183,7 +184,7 @@ def train_tensorboard_gradient_accumulation(
           results['test_acc_metric'].append(test_acc.detach().cpu().numpy())
           print(f'Test_acc_metric: {test_acc:.4f}')
 
-        if test_acc > max_acc:
+        if saving_max and test_acc > max_acc:
            max_acc = test_acc
            utils.save_model(
               model=model,
@@ -213,6 +214,7 @@ def HP_tune_train(
     model_name: str,
     train_dataset: datasets,
     test_dataset: datasets,
+    class_names: List[any],
     learning_rate_list: List[float],
     weight_decay_list: List[float],
     epochs_list: List[int],
@@ -220,10 +222,9 @@ def HP_tune_train(
     is_tensorboard_writer: bool,
     device: torch.device,
     gradient_accumulation_num: int = 2,
+    saving_max: bool = False,
     metric_learning: bool = False,
-    num_workers: int = 1
 ):
-    class_names = train_dataset.classes
     tuning_results = []
 
     for learning_rate in learning_rate_list:
@@ -241,13 +242,11 @@ def HP_tune_train(
                         dataset=train_dataset,
                         batch_size=batch_size,
                         shuffle=True,
-                        num_workers=num_workers
                     )
                     test_dataloader = DataLoader(
                         dataset=test_dataset,
                         batch_size=batch_size,
                         shuffle=False,
-                        num_workers=num_workers
                     )
 
                     if not model:
@@ -279,6 +278,7 @@ def HP_tune_train(
                         device=device,
                         writer=writer,
                         accumulation_num=gradient_accumulation_num,
+                        saving_max=saving_max,
                         metric_learning=metric_learning
                     )
 
