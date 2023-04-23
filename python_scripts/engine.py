@@ -173,7 +173,7 @@ def train_tensorboard_gradient_accumulation(
 
         print(f'Epoch: {epoch} | Train_loss: {train_loss:.4f}, Train_acc: {train_acc:.4f} | Test_loss: {test_loss:.4f}, Test_acc: {test_acc:.4f}')
 
-        if metric_learning and epoch % 1 == 0:
+        if metric_learning and epoch % 3 == 0:
           test_acc = test_step_metric_learning(
              model=model,
              train_dataloader=train_dataloader,
@@ -189,7 +189,7 @@ def train_tensorboard_gradient_accumulation(
            utils.save_model(
               model=model,
               target_dir='../models',
-              model_name=f'{save_name}_EPOCH_{epoch}_TEST-ACC_{test_acc}.pth'
+              model_name=f'{save_name}_EPOCH_{epoch}_TEST-ACC_{test_acc:.4f}.pth'
            )
 
         if writer:
@@ -259,6 +259,7 @@ def HP_tune_train(
                             model_name=model_name,
                             extra=f'LR_{learning_rate}_WD_{weight_decay}_EP_{epochs}_BS_{batch_size}_GA_{gradient_accumulation_num}'
                         )
+
                     model_results = train_tensorboard_gradient_accumulation(
                         model=model,
                         save_name=f'{model_name}_LR_{learning_rate}_WD_{weight_decay}_BS_{batch_size}_GA_{gradient_accumulation_num}',
