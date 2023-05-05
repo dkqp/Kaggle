@@ -183,6 +183,11 @@ def train_tensorboard_gradient_accumulation(
           )
           results['test_acc_metric'].append(test_acc.detach().cpu().numpy())
           print(f'Test_acc_metric: {test_acc:.4f}')
+          utils.save_model(
+              model=model,
+              target_dir='../models',
+              model_name=f'{save_name}_EPOCH_{epoch}_TEST-ACC_{test_acc:.4f}.pth'
+           )
 
         if saving_max and test_acc > max_acc:
            max_acc = test_acc
