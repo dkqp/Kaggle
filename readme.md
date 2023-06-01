@@ -14,6 +14,7 @@ Implementing data analysis Exploratory data analysis, Feature engineering
 | [Google_Landmark_2021](./notebooks/google-landmark-2021.ipynb) |         [Kaggle](https://www.kaggle.com/code/taegeunlim/landmark-2021-demo-for-starters)          |  ✅  |
 |       [Discrimination](./notebooks/discrimination.ipynb)       |                       [Kaggle](https://www.kaggle.com/competitions/kdtai-2)                       |  ✅  |
 |        [Space_titanic](./notebooks/space-titanic.ipynb)        |             [Kaggle](https://www.kaggle.com/competitions/spaceship-titanic/overview)              |  ✅  |
+|     [Animal_detection](./notebooks/animal_detection.ipynb)     |                       [Kaggle](https://www.kaggle.com/competitions/kdtai-3)                       |  ✅  |
 |                          Student_game                          | [Kaggle](https://www.kaggle.com/competitions/predict-student-performance-from-game-play/overview) |      |
 
 <hr>
@@ -27,3 +28,4 @@ Implementing data analysis Exploratory data analysis, Feature engineering
 - 2023.04.27 **Discrimination**: In-house competition closed
 - 2023.05.01 **Student_game**: Global competition in progress
 - 2023.05.03 **Space_titanic**: Kaggle basic knowledge competition
+- 2023.06.01 **Animal_detection**: In-house competition closed
