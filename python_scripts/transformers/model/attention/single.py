@@ -1,11 +1,12 @@
 import torch
+import math
 
 
 class Attention(torch.nn.Module):
     def __init__(self, dropout=None) -> None:
         super().__init__()
 
-        self.dropout = torch.nn.Dropout(p=dropout, inplace=True)
+        self.dropout = torch.nn.Dropout(p=dropout)
 
     def forward(self, q, k, v, mask=None):
         '''
@@ -15,7 +16,8 @@ class Attention(torch.nn.Module):
         mask: tensor with 0 for masked position (token_length * token_length)
         ** assume q_dim == k_dim == v_dim == d_k
         '''
-        attn_score = torch.matmul(q, torch.transpose(k, -1, -2)) / torch.sqrt(k.size(-1))
+
+        attn_score = torch.matmul(q, torch.transpose(k, -1, -2)) / math.sqrt(k.size(-1))
         # (batch, num_head, q_dim, k_dim)
 
         if mask is not None:

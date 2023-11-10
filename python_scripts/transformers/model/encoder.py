@@ -17,7 +17,7 @@ class EncoderBlock(torch.nn.Module):
         self.feedforward = FeedForward(dim_embed=dim_embed, dim_ff=dim_ff, dropout=dropout)
         self.sublayer1 = SublayerResConnection(size=dim_embed, dropout=dropout)
         self.sublayer2 = SublayerResConnection(size=dim_embed, dropout=dropout)
-        self.dropout = torch.nn.Dropout(dropout, inplace=True)
+        self.dropout = torch.nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
         x = self.sublayer1(x, lambda _x: self.attention(_x, _x, _x, mask=mask))

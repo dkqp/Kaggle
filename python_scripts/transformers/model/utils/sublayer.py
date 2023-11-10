@@ -6,7 +6,7 @@ class SublayerResConnection(torch.nn.Module):
         super().__init__()
 
         self.norm = torch.nn.LayerNorm(size)
-        self.dropout = torch.nn.Dropout(dropout, inplace=True)
+        self.dropout = torch.nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
         return self.norm(x + self.dropout(sublayer(x)))

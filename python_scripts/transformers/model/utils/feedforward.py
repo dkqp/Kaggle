@@ -7,7 +7,7 @@ class FeedForward(torch.nn.Module):
 
         self.layer1 = torch.nn.Linear(in_features=dim_embed, out_features=dim_ff)
         self.layer2 = torch.nn.Linear(in_features=dim_ff, out_features=dim_embed)
-        self.dropout = torch.nn.Dropout(dropout, inplace=True)
+        self.dropout = torch.nn.Dropout(dropout)
         self.activation = torch.nn.GELU()
 
     def forward(self, x):

@@ -9,8 +9,8 @@ class CombEmbedding(torch.nn.Module):
         super().__init__()
 
         self.token = TokenEmbedding(num_embeddings=vocab_size, embedding_dim=dim_embed)
-        self.position = PositionEmbedding(dim_model=dim_embed)
-        self.dropout = torch.nn.Dropout(dropout, inplace=True)
+        self.position = PositionEmbedding(dim_embed=dim_embed)
+        self.dropout = torch.nn.Dropout(dropout)
         self.dim_embed = dim_embed
 
     def forward(self, sequences):
