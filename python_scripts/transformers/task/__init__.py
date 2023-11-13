@@ -1,1 +1,2 @@
-from .masking import MaskingTask
+from .masking_task import MaskingTask
+from .rna_task import RNATask

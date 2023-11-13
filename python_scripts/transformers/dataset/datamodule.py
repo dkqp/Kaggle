@@ -13,7 +13,6 @@ class MaskedDataModule(pl.LightningDataModule):
             whole_dataset: Dataset,
             train_val_test_ratio: list[float] = [0.8, 0.1, 0.1],
             batch_size: int = 1,
-            shuffle: bool = False,
             mask_token_ratio: float = 0.1,
             mask_ratio: list[float] = [0.8, 0.1, 0.1],
             num_workers: int = 0
@@ -27,7 +26,6 @@ class MaskedDataModule(pl.LightningDataModule):
         self.train_val_dataset = whole_dataset
         self.train_val_test_ratio = train_val_test_ratio
         self.batch_size = batch_size
-        self.shuffle = shuffle
         self.num_workers = num_workers
 
         self.mask_token_ratio = mask_token_ratio
@@ -40,7 +38,7 @@ class MaskedDataModule(pl.LightningDataModule):
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(self.train_val_dataset, self.train_val_test_ratio)
 
     def _collate_fn(self, batch):
-        data = torch.tensor(batch)
+        data = torch.stack(batch)
         label = torch.empty_like(data)
 
         for i in range(len(data)):
@@ -97,3 +95,56 @@ class MaskedDataModule(pl.LightningDataModule):
             num_workers=self.num_workers
         )
 
+class RNADataModule(pl.LightningDataModule):
+    def __init__(
+            self,
+            whole_dataset: Dataset,
+            train_val_test_ratio: list[float] = [0.8, 0.1, 0.1],
+            batch_size: int = 1,
+            mask_token_ratio: float = 0.1,
+            mask_ratio: list[float] = [0.8, 0.1, 0.1],
+            num_workers: int = 0
+        ):
+        super().__init__()
+
+        assert sum(train_val_test_ratio) == 1
+        assert 0 < mask_token_ratio < 1
+        assert sum(mask_ratio) == 1
+
+        self.train_val_dataset = whole_dataset
+        self.train_val_test_ratio = train_val_test_ratio
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+
+        self.mask_token_ratio = mask_token_ratio
+        self.mask_ratio = mask_ratio
+
+        self.word_to_idx = whole_dataset.word_to_idx
+        self.vocab_size = len(whole_dataset.vocab)
+
+    def prepare_data(self) -> None:
+        self.train_dataset, self.val_dataset, self.test_dataset = random_split(self.train_val_dataset, self.train_val_test_ratio)
+
+    def train_dataloader(self) -> TRAIN_DATALOADERS:
+        return DataLoader(
+            self.train_dataset,
+            self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers
+        )
+
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            self.val_dataset,
+            self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers
+        )
+
+    def test_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            self.test_dataset,
+            self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers
+        )

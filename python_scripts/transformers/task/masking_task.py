@@ -1,4 +1,3 @@
-from tabnanny import verbose
 import torch
 
 import lightning.pytorch as pl
@@ -71,8 +70,6 @@ class MaskingTask(pl.LightningModule):
             'val_avg_loss': torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean(),
             'val_avg_accuracy': torch.stack([x['val_accuracy'] for x in self.validation_step_outputs]).mean(),
         }
-
-        print(metrics)
 
         self.log_dict(metrics)
 
