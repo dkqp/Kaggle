@@ -10,8 +10,8 @@ class MaskingTask(pl.LightningModule):
             model: torch.nn.Module,
             loss_fn: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
-            scheduler: torch.optim.lr_scheduler.LRScheduler,
-            acc_fn,
+            scheduler: torch.optim.lr_scheduler.LRScheduler = None,
+            acc_fn = None,
     ) -> None:
         super().__init__()
 
@@ -100,9 +100,5 @@ class MaskingTask(pl.LightningModule):
     def configure_optimizers(self):
         return {
             'optimizer': self.optimizer,
-            'lr_scheduler': self.scheduler(
-                self.optimizer,
-                T_max=5,
-                verbose=True,
-            )
+            'lr_scheduler': self.scheduler
         }
