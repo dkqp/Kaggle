@@ -18,14 +18,16 @@ class Attention(torch.nn.Module):
         '''
 
         attn_score = torch.matmul(q, torch.transpose(k, -1, -2)) / math.sqrt(k.size(-1))
-        # (batch, num_head, q_dim, k_dim)
+        # (batch, num_head, token_length, token_length)
 
         if mask is not None:
-            attn_score = attn_score.masked_fill(mask == 0, value=1e-9)
+            attn_score = attn_score.masked_fill(mask == 0, value=-float('inf'))
 
         attn_p = torch.softmax(attn_score, dim=-1)
         attn_p = self.dropout(attn_p)
+        # (batch, num_head, token_length, 1)
 
         attention = torch.matmul(attn_p, v)
+        # (batch, num_head, token_length, v_dim)
 
         return attention, attn_p

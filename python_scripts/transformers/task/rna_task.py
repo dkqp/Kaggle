@@ -24,9 +24,13 @@ class RNATask(pl.LightningModule):
         self.training_step_outputs = []
         self.validation_step_outputs = []
 
+        self.predict_outputs = {
+            '2A3_MaP': [],
+            'DMS_MaP': []
+        }
+
     def on_before_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
-        if self.device.type == 'mps':
-            return (batch[0], batch[1].type(dtype=torch.float32))
+        batch = (batch[0], batch[1].type(dtype=torch.float32))
         return super().on_before_batch_transfer(batch, dataloader_idx)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
@@ -59,6 +63,11 @@ class RNATask(pl.LightningModule):
 
         return loss
 
+    def on_train_batch_end(self, outputs: STEP_OUTPUT, batch: Any, batch_idx: int) -> None:
+        # for schedulers applied for each step
+        self.scheduler.step()
+        return super().on_train_batch_end(outputs, batch, batch_idx)
+
     def on_validation_epoch_end(self) -> None:
         if not (self.training_step_outputs and self.validation_step_outputs):
             return
@@ -71,8 +80,10 @@ class RNATask(pl.LightningModule):
         self.log_dict(metrics)
 
         print("\n" +
-              (f"Epoch {self.current_epoch}, Avg. Training Loss: {metrics['train_avg_loss']:.3f} " +
-               f"Avg. Validation Loss: {metrics['val_avg_loss']:.3f}"), flush=True)
+              (f"Epoch {self.current_epoch}, Avg. Training Loss: {metrics['train_avg_loss']:.4f} " +
+               f"Avg. Validation Loss: {metrics['val_avg_loss']:.4f}"), flush=True)
+
+        print(self.optimizer.param_groups[0]['lr'])
 
         self.training_step_outputs.clear()
         self.validation_step_outputs.clear()
@@ -89,8 +100,16 @@ class RNATask(pl.LightningModule):
         }
         self.log_dict(metrics, prog_bar=True)
 
+    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
+        X_batch = batch[0]
+
+        outputs = self.model(X_batch)
+
+        self.predict_outputs['2A3_MaP'] += outputs[:, 0, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)]
+        self.predict_outputs['DMS_MaP'] += outputs[:, 1, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)]
+
     def configure_optimizers(self):
         return {
             'optimizer': self.optimizer,
-            'lr_scheduler': self.scheduler
+            # 'lr_scheduler': self.scheduler
         }

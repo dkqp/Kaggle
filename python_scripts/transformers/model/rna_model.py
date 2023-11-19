@@ -9,7 +9,16 @@ class BERTCustomRNAReactivity(torch.nn.Module):
 
         self.bert = bert
         self.linear = torch.nn.Linear(in_features=bert.hidden, out_features=1)
-        self.activation = torch.nn.Sigmoid()
 
     def forward(self, x):
-        return self.activation(self.linear(self.bert(sequences=x))).squeeze(-1)
+        return self.linear(self.bert(sequences=x)).squeeze(-1)
+
+class BERTCustomRNAReactivity_2(torch.nn.Module):
+    def __init__(self, bert: BERTCustom) -> None:
+        super().__init__()
+
+        self.bert = bert
+        self.linear = torch.nn.Linear(in_features=bert.hidden, out_features=2)
+
+    def forward(self, x):
+        return self.linear(self.bert(sequences=x)).transpose(-1, -2)

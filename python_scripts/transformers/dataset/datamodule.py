@@ -98,7 +98,8 @@ class MaskedDataModule(pl.LightningDataModule):
 class RNADataModule(pl.LightningDataModule):
     def __init__(
             self,
-            whole_dataset: Dataset,
+            whole_train_dataset: Dataset,
+            predict_dataset: Dataset = None,
             train_val_test_ratio: list[float] = [0.8, 0.1, 0.1],
             batch_size: int = 1,
             mask_token_ratio: float = 0.1,
@@ -111,16 +112,17 @@ class RNADataModule(pl.LightningDataModule):
         assert 0 < mask_token_ratio < 1
         assert sum(mask_ratio) == 1
 
-        self.train_val_dataset = whole_dataset
+        self.train_val_dataset = whole_train_dataset
         self.train_val_test_ratio = train_val_test_ratio
+        self.predict_dataset = predict_dataset
         self.batch_size = batch_size
         self.num_workers = num_workers
 
         self.mask_token_ratio = mask_token_ratio
         self.mask_ratio = mask_ratio
 
-        self.word_to_idx = whole_dataset.word_to_idx
-        self.vocab_size = len(whole_dataset.vocab)
+        self.word_to_idx = whole_train_dataset.word_to_idx
+        self.vocab_size = len(whole_train_dataset.vocab)
 
     def prepare_data(self) -> None:
         self.train_dataset, self.val_dataset, self.test_dataset = random_split(self.train_val_dataset, self.train_val_test_ratio)
@@ -145,6 +147,14 @@ class RNADataModule(pl.LightningDataModule):
         return DataLoader(
             self.test_dataset,
             self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers
+        )
+
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            dataset=self.predict_dataset,
+            batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers
         )
