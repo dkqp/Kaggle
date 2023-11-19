@@ -1,3 +1,4 @@
+from typing import Any, Optional
 import torch
 
 import lightning.pytorch as pl
@@ -60,6 +61,11 @@ class MaskingTask(pl.LightningModule):
 
         return loss
 
+    def on_train_batch_end(self, outputs: STEP_OUTPUT, batch: Any, batch_idx: int) -> None:
+        # for schedulers applied for each step
+        self.scheduler.step()
+        return super().on_train_batch_end(outputs, batch, batch_idx)
+
     def on_validation_epoch_end(self) -> None:
         if not (self.training_step_outputs and self.validation_step_outputs):
             return
@@ -74,10 +80,12 @@ class MaskingTask(pl.LightningModule):
         self.log_dict(metrics)
 
         print("\n" +
-              (f"Epoch {self.current_epoch}, Avg. Training Loss: {metrics['train_avg_loss']:.3f} " +
-               f"Avg. Training Accuracy: {metrics['train_avg_accuracy']:.3f} " +
-               f"Avg. Validation Loss: {metrics['val_avg_loss']:.3f} " +
-               f"Avg. Validation Accuracy: {metrics['val_avg_accuracy']:.3f}"), flush=True)
+              (f"Epoch {self.current_epoch}, Avg. Training Loss: {metrics['train_avg_loss']:.4f} " +
+               f"Avg. Training Accuracy: {metrics['train_avg_accuracy']:.4f} " +
+               f"Avg. Validation Loss: {metrics['val_avg_loss']:.4f} " +
+               f"Avg. Validation Accuracy: {metrics['val_avg_accuracy']:.4f}"), flush=True)
+
+        print(self.optimizer.param_groups[0]['lr'])
 
         self.training_step_outputs.clear()
         self.validation_step_outputs.clear()
@@ -100,5 +108,5 @@ class MaskingTask(pl.LightningModule):
     def configure_optimizers(self):
         return {
             'optimizer': self.optimizer,
-            'lr_scheduler': self.scheduler
+            # 'lr_scheduler': self.scheduler
         }

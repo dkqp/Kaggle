@@ -1,17 +1,18 @@
-from tabnanny import verbose
 from typing import Any, Optional
 import torch
 
 import lightning.pytorch as pl
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 
+import numpy as np
+
 
 class RNATask(pl.LightningModule):
     def __init__(
             self,
             model: torch.nn.Module,
-            loss_fn: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
+            loss_fn: torch.nn.Module = None,
+            optimizer: torch.optim.Optimizer = None,
             scheduler: torch.optim.lr_scheduler.LRScheduler = None,
     ) -> None:
         super().__init__()
@@ -23,11 +24,6 @@ class RNATask(pl.LightningModule):
 
         self.training_step_outputs = []
         self.validation_step_outputs = []
-
-        self.predict_outputs = {
-            '2A3_MaP': [],
-            'DMS_MaP': []
-        }
 
     def on_before_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
         batch = (batch[0], batch[1].type(dtype=torch.float32))
@@ -105,8 +101,10 @@ class RNATask(pl.LightningModule):
 
         outputs = self.model(X_batch)
 
-        self.predict_outputs['2A3_MaP'] += outputs[:, 0, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)]
-        self.predict_outputs['DMS_MaP'] += outputs[:, 1, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)]
+        return np.array([
+            outputs[:, 0, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)].cpu(),
+            outputs[:, 1, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)].cpu()
+        ])
 
     def configure_optimizers(self):
         return {

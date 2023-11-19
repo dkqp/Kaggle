@@ -98,7 +98,7 @@ class MaskedDataModule(pl.LightningDataModule):
 class RNADataModule(pl.LightningDataModule):
     def __init__(
             self,
-            whole_train_dataset: Dataset,
+            whole_train_dataset: Dataset = None,
             predict_dataset: Dataset = None,
             train_val_test_ratio: list[float] = [0.8, 0.1, 0.1],
             batch_size: int = 1,
@@ -108,6 +108,7 @@ class RNADataModule(pl.LightningDataModule):
         ):
         super().__init__()
 
+        assert whole_train_dataset or predict_dataset
         assert sum(train_val_test_ratio) == 1
         assert 0 < mask_token_ratio < 1
         assert sum(mask_ratio) == 1
@@ -121,11 +122,13 @@ class RNADataModule(pl.LightningDataModule):
         self.mask_token_ratio = mask_token_ratio
         self.mask_ratio = mask_ratio
 
-        self.word_to_idx = whole_train_dataset.word_to_idx
-        self.vocab_size = len(whole_train_dataset.vocab)
+        if whole_train_dataset:
+            self.word_to_idx = whole_train_dataset.word_to_idx
+            self.vocab_size = len(whole_train_dataset.vocab)
 
     def prepare_data(self) -> None:
-        self.train_dataset, self.val_dataset, self.test_dataset = random_split(self.train_val_dataset, self.train_val_test_ratio)
+        if self.train_val_dataset:
+            self.train_dataset, self.val_dataset, self.test_dataset = random_split(self.train_val_dataset, self.train_val_test_ratio)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         return DataLoader(
