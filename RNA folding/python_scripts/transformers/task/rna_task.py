@@ -97,13 +97,13 @@ class RNATask(pl.LightningModule):
         self.log_dict(metrics, prog_bar=True)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
-        X_batch = batch[0]
+        X_batch, mask_batch = batch
 
         outputs = self.model(X_batch)
 
         return np.array([
-            outputs[:, 0, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)].cpu(),
-            outputs[:, 1, :][(X_batch != 0) & (X_batch != 1) & (X_batch != 2)].cpu()
+            outputs[:, 0][mask_batch[:, 0].type(torch.bool)].cpu(),
+            outputs[:, 1][mask_batch[:, 1].type(torch.bool)].cpu()
         ])
 
     def configure_optimizers(self):
