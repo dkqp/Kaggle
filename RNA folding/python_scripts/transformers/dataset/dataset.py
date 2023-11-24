@@ -72,7 +72,7 @@ class RNADataset_train(Dataset):
         ]).transpose((1, 0))
         # size: (self.max_len, 4)
 
-        label_added = np.expand_dims(self.label[:, index], axis=-1)
+        label_added = np.expand_dims(self.label[:, index], axis=-1).clip(min=0, max=1)
         # size: (2, 206, 1)
 
         label_added = label_added.repeat(4, axis=-1)
