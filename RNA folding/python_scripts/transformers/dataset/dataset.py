@@ -5,11 +5,11 @@ import pandas as pd
 import numpy as np
 
 class MaskedDataset(Dataset):
-    def __init__(self, data: pd.DataFrame, vocab: pd.DataFrame, max_len: int) -> None:
+    def __init__(self, data_ext: pd.DataFrame, vocab: pd.DataFrame, max_len: int) -> None:
         super().__init__()
 
-        self.seq_data = data['sequence']
-        self.exp_type = data['experiment_type']
+        self.data_ext = data_ext
+
         self.vocab = vocab
         self.word_to_idx = {}
         for i in range(len(vocab)):
@@ -17,13 +17,12 @@ class MaskedDataset(Dataset):
         self.max_len = max_len
 
     def __len__(self):
-        return len(self.seq_data)
+        return len(self.data_ext)
 
     def __getitem__(self, index):
         data_added = [
-            self.word_to_idx[self.exp_type[index]],
             self.word_to_idx['START'],
-            *([self.word_to_idx[s] for s in self.seq_data[index]][:self.max_len - 3]),
+            *([self.word_to_idx[s + e] for s, e in zip(self.data_ext.iloc[index]['sequence'], self.data_ext.iloc[index]['sequence_ext'])][:self.max_len - 2]),
             self.word_to_idx['END']
         ]
         data_added += [self.word_to_idx['PAD']] * (self.max_len - len(data_added))

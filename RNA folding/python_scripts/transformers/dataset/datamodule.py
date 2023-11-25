@@ -104,6 +104,7 @@ class RNADataModule(pl.LightningDataModule):
             batch_size: int = 1,
             mask_token_ratio: float = 0.1,
             mask_ratio: list[float] = [0.8, 0.1, 0.1],
+            augmentation: bool = False,
             num_workers: int = 0
         ):
         super().__init__()
@@ -117,6 +118,8 @@ class RNADataModule(pl.LightningDataModule):
         self.train_val_test_ratio = train_val_test_ratio
         self.predict_dataset = predict_dataset
         self.batch_size = batch_size
+
+        self.augmentation = augmentation
         self.num_workers = num_workers
 
         self.mask_token_ratio = mask_token_ratio
@@ -125,6 +128,25 @@ class RNADataModule(pl.LightningDataModule):
         if whole_train_dataset:
             self.word_to_idx = whole_train_dataset.word_to_idx
             self.vocab_size = len(whole_train_dataset.vocab)
+
+    def _collate_fn(self, batch):
+        data = torch.stack([b[0] for b in batch])
+        label = torch.stack([b[1] for b in batch])
+
+        if not self.augmentation:
+            return data, label
+
+        max_length = data.shape[-1]
+        aug_length = torch.randint(0, 300, ())
+        aug_position = torch.randint(1, 207, ())
+
+        data_added = torch.ones_like(data)[:, :aug_length] * self.word_to_idx['PAD']
+        label_added = torch.ones_like(label)[:, :, :aug_length, :] * -100
+
+        data = torch.concat([data[:, :aug_position], data_added, data[:, aug_position:max_length-aug_length]], dim=1)
+        label = torch.concat([label[:, :, :aug_position, :], label_added, label[:, :, aug_position:max_length-aug_length, :]], dim=2)
+
+        return data, label
 
     def prepare_data(self) -> None:
         if self.train_val_dataset:
@@ -135,6 +157,7 @@ class RNADataModule(pl.LightningDataModule):
             self.train_dataset,
             self.batch_size,
             shuffle=True,
+            collate_fn=self._collate_fn,
             num_workers=self.num_workers
         )
 

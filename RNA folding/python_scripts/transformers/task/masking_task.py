@@ -9,8 +9,8 @@ class MaskingTask(pl.LightningModule):
     def __init__(
             self,
             model: torch.nn.Module,
-            loss_fn: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
+            loss_fn: torch.nn.Module = None,
+            optimizer: torch.optim.Optimizer = None,
             scheduler: torch.optim.lr_scheduler.LRScheduler = None,
             acc_fn = None,
     ) -> None:
@@ -85,7 +85,7 @@ class MaskingTask(pl.LightningModule):
                f"Avg. Validation Loss: {metrics['val_avg_loss']:.4f} " +
                f"Avg. Validation Accuracy: {metrics['val_avg_accuracy']:.4f}"), flush=True)
 
-        print(self.optimizer.param_groups[0]['lr'])
+        print('The learing_rate is set to: ', self.optimizer.param_groups[0]['lr'])
 
         self.training_step_outputs.clear()
         self.validation_step_outputs.clear()

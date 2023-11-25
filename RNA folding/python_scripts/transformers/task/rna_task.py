@@ -79,7 +79,7 @@ class RNATask(pl.LightningModule):
               (f"Epoch {self.current_epoch}, Avg. Training Loss: {metrics['train_avg_loss']:.4f} " +
                f"Avg. Validation Loss: {metrics['val_avg_loss']:.4f}"), flush=True)
 
-        print(self.optimizer.param_groups[0]['lr'])
+        print('The learing_rate is set to: ', self.optimizer.param_groups[0]['lr'])
 
         self.training_step_outputs.clear()
         self.validation_step_outputs.clear()
