@@ -122,6 +122,69 @@ class RNADataset_pred(Dataset):
             np.where((data_added == self.word_to_idx['C(']) | (data_added == self.word_to_idx['C)']) | (data_added == self.word_to_idx['C.']), True, False),
             np.where((data_added == self.word_to_idx['U(']) | (data_added == self.word_to_idx['U)']) | (data_added == self.word_to_idx['U.']), True, False),
         ]).transpose((1, 0)), axis=0).repeat(2, axis=0)
-        # size: (1, self.max_len, 4)
+        # size: (2, self.max_len, 4)
 
         return torch.tensor(data_added), torch.tensor(label_mask)
+
+class RNAdataset_sliced_train(Dataset):
+    def __init__(self, data: torch.Tensor, vocab: pd.DataFrame) -> None:
+        super().__init__()
+
+        self.data = data
+        self.vocab = vocab
+
+    def __len__(self):
+        return len(self.data['inputs'])
+
+    def __getitem__(self, index):
+        return self.data['inputs'][index], self.data['labels'][index]
+
+class RNADataset_sliced_pred(Dataset):
+    def __init__(self, data_ext: pd.DataFrame, vocab: pd.DataFrame, max_len: int) -> None:
+        super().__init__()
+
+        self.data_ext = data_ext
+
+        self.vocab = vocab
+        self.word_to_idx = {}
+        for i in range(len(vocab)):
+            self.word_to_idx[vocab['words'][i]] = i
+        self.max_len = max_len
+
+    def __len__(self):
+        return len(self.data_ext)
+
+    def __getitem__(self, index):
+        data_added = make_sliced_pred(
+            data=self.data_ext.iloc[index]['sequence'],
+            data_ext=self.data_ext.iloc[index]['sequence_ext'],
+            vocab=self.vocab
+        )
+
+        data_added = np.array(data_added)
+
+        label_mask = np.expand_dims(np.array([
+            np.where((data_added == self.word_to_idx['A(']) | (data_added == self.word_to_idx['A)']) | (data_added == self.word_to_idx['A.']), True, False),
+            np.where((data_added == self.word_to_idx['G(']) | (data_added == self.word_to_idx['G)']) | (data_added == self.word_to_idx['G.']), True, False),
+            np.where((data_added == self.word_to_idx['C(']) | (data_added == self.word_to_idx['C)']) | (data_added == self.word_to_idx['C.']), True, False),
+            np.where((data_added == self.word_to_idx['U(']) | (data_added == self.word_to_idx['U)']) | (data_added == self.word_to_idx['U.']), True, False),
+        ]).transpose((1, 2, 0)), axis=1).repeat(2, axis=1)
+        # size: (len(data_added), 2, self.max_len, 4)
+
+        return torch.tensor(data_added), torch.tensor(label_mask)
+
+def make_sliced_pred(data: str, data_ext: str, vocab: pd.DataFrame):
+    word_to_idx = {}
+    for i in range(len(vocab)):
+        word_to_idx[vocab['words'][i]] = i
+
+    token_sliced = []
+    j = 0
+    while j + 50 < len(data):
+        token_sliced.append([word_to_idx[s + e] for s, e in zip(data[j:j+100], data_ext[j:j+100])])
+        j += 50
+
+    if len(token_sliced[-1]) < 100:
+        token_sliced[-1] += [word_to_idx['PAD']] * (100 - len(token_sliced[-1]))
+
+    return token_sliced

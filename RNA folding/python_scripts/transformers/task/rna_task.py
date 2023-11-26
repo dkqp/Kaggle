@@ -14,6 +14,7 @@ class RNATask(pl.LightningModule):
             loss_fn: torch.nn.Module = None,
             optimizer: torch.optim.Optimizer = None,
             scheduler: torch.optim.lr_scheduler.LRScheduler = None,
+            sliced: bool = False,
     ) -> None:
         super().__init__()
 
@@ -21,6 +22,7 @@ class RNATask(pl.LightningModule):
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.sliced = sliced
 
         self.training_step_outputs = []
         self.validation_step_outputs = []
@@ -100,6 +102,22 @@ class RNATask(pl.LightningModule):
         X_batch, mask_batch = batch
 
         outputs = self.model(X_batch)
+
+        if self.sliced:
+            outputs_type1_sliced_list = [o[0][m[0].type(torch.bool)].cpu() for o, m in zip(outputs, mask_batch)]
+            outputs_type2_sliced_list = [o[1][m[1].type(torch.bool)].cpu() for o, m in zip(outputs, mask_batch)]
+
+            outputs_type1_sliced_merged = torch.concat([outputs_type1_sliced_list[0][:50]] + [x[50:] for x in outputs_type1_sliced_list], dim=0)
+            outputs_type2_sliced_merged = torch.concat([outputs_type2_sliced_list[0][:50]] + [x[50:] for x in outputs_type2_sliced_list], dim=0)
+
+            for i in range(1, len(outputs_type1_sliced_list)):
+                outputs_type1_sliced_merged[i * 50 : (i + 1) * 50] = outputs_type1_sliced_merged[i * 50 : (i + 1) * 50] / 2 + outputs_type1_sliced_list[i][:50] / 2
+                outputs_type2_sliced_merged[i * 50 : (i + 1) * 50] = outputs_type2_sliced_merged[i * 50 : (i + 1) * 50] / 2 + outputs_type2_sliced_list[i][:50] / 2
+
+            return np.array([
+                outputs_type1_sliced_merged,
+                outputs_type2_sliced_merged
+            ])
 
         return np.array([
             outputs[:, 0][mask_batch[:, 0].type(torch.bool)].cpu(),
