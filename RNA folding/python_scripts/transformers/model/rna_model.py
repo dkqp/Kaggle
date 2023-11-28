@@ -10,7 +10,7 @@ class BERTCustomRNAReactivity(torch.nn.Module):
         self.bert = bert
         self.linear = torch.nn.Linear(in_features=bert.hidden, out_features=8)
 
-    def forward(self, x):
+    def forward(self, x, probs=None):
         batch_size = x.shape[0]
-        x = self.linear(self.bert(sequences=x))
+        x = self.linear(self.bert(sequences=x, probs=probs))
         return x.view(batch_size, -1, 2, 4).transpose(1, 2)

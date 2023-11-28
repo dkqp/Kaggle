@@ -31,7 +31,7 @@ class BERTCustom(torch.nn.Module):
             ) for _ in range(num_layer)
         ])
 
-    def forward(self, sequences):
+    def forward(self, sequences, probs=None):
         # sequences: (batch, len_tokens)
         mask = (sequences > 0).unsqueeze(1).repeat(1, sequences.size(1), 1).unsqueeze(1)
         # (batch, 1, len_tokens, len_tokens)
@@ -39,6 +39,6 @@ class BERTCustom(torch.nn.Module):
         x = self.embedding(sequences=sequences)
 
         for enc_block in self.encoder_blocks:
-            x = enc_block(x, mask)
+            x = enc_block(x, mask=mask, probs=probs)
 
         return x

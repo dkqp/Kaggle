@@ -24,7 +24,7 @@ class MultiheadAttention(torch.nn.Module):
 
         self.attention = Attention(dropout=dropout)
 
-    def forward(self, q, k=None, v=None, mask=None):
+    def forward(self, q, k=None, v=None, mask=None, probs=None):
         '''
         q: query (batch * token_length * dim_embed)
         k: key (batch * token_length * dim_embed)
@@ -43,7 +43,7 @@ class MultiheadAttention(torch.nn.Module):
         q, k, v = [layer(x).view(batch_size, -1, self.num_head, self.d_k).transpose(1, 2) for layer, x in zip(self.linear_layers, [q, k, v])]
         # q, k, v: (batch, num_head, token_length, dim_k)
 
-        x, attn = self.attention(q, k, v, mask=mask)
+        x, attn = self.attention(q, k, v, mask=mask, probs=probs)
         # x: (batch, num_head, token_length, dim_v)
 
         x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.num_head * self.d_k)

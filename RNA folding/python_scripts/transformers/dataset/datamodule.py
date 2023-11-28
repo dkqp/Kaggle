@@ -106,6 +106,7 @@ class RNADataModule(pl.LightningDataModule):
             mask_ratio: list[float] = [0.8, 0.1, 0.1],
             augmentation: bool = False,
             sliced: bool = False,
+            probs_adjusted: bool = False,
             num_workers: int = 0
         ):
         super().__init__()
@@ -115,7 +116,8 @@ class RNADataModule(pl.LightningDataModule):
         assert 0 < mask_token_ratio < 1
         assert sum(mask_ratio) == 1
 
-        assert sliced == (batch_size == 1 or not sliced)
+        assert (sliced == (batch_size == 1)) or not sliced
+        assert sum([augmentation, sliced, probs_adjusted]) <= 1
 
         self.train_val_dataset = whole_train_dataset
         self.train_val_test_ratio = train_val_test_ratio
@@ -129,6 +131,7 @@ class RNADataModule(pl.LightningDataModule):
         self.mask_ratio = mask_ratio
 
         self.sliced = sliced
+        self.probs_adjusted = probs_adjusted
 
         if whole_train_dataset and hasattr(whole_train_dataset, 'word_to_idx'):
             self.word_to_idx = whole_train_dataset.word_to_idx
@@ -137,25 +140,38 @@ class RNADataModule(pl.LightningDataModule):
         data = torch.stack([b[0] for b in batch])
         label = torch.stack([b[1] for b in batch])
 
-        if not self.augmentation:
+        if self.probs_adjusted:
+            probs = torch.stack([b[2] for b in batch])
+
+            return data, label, probs
+
+        if self.augmentation:
+            aug_length = torch.randint(0, 300, ())
+            aug_position = torch.randint(1, 207, ())
+
+            data_added = torch.ones_like(data)[:, :aug_length] * self.word_to_idx['PAD']
+            label_added = torch.ones_like(label)[:, :, :aug_length, :] * -100
+
+            data = torch.concat([data[:, :aug_position], data_added, data[:, aug_position:]], dim=1)
+            label = torch.concat([label[:, :, :aug_position, :], label_added, label[:, :, aug_position:, :]], dim=2)
+
             return data, label
-
-        aug_length = torch.randint(0, 300, ())
-        aug_position = torch.randint(1, 207, ())
-
-        data_added = torch.ones_like(data)[:, :aug_length] * self.word_to_idx['PAD']
-        label_added = torch.ones_like(label)[:, :, :aug_length, :] * -100
-
-        data = torch.concat([data[:, :aug_position], data_added, data[:, aug_position:]], dim=1)
-        label = torch.concat([label[:, :, :aug_position, :], label_added, label[:, :, aug_position:, :]], dim=2)
 
         return data, label
 
     def _collate_fn_pred_sliced(self, batch):
-        if not self.sliced:
-            return torch.stack([b[0] for b in batch]), torch.stack([b[1] for b in batch])
+        data = torch.stack([b[0] for b in batch])
+        label = torch.stack([b[1] for b in batch])
 
-        return batch[0][0], batch[0][1]
+        if self.sliced:
+            return batch[0][0], batch[0][1]
+
+        if self.probs_adjusted:
+            probs = torch.stack([b[2] for b in batch])
+
+            return data, label, probs
+
+        return data, label
 
     def prepare_data(self) -> None:
         if self.train_val_dataset:
@@ -175,6 +191,7 @@ class RNADataModule(pl.LightningDataModule):
             self.val_dataset,
             self.batch_size,
             shuffle=False,
+            collate_fn=self._collate_fn,
             num_workers=self.num_workers
         )
 
@@ -183,6 +200,7 @@ class RNADataModule(pl.LightningDataModule):
             self.test_dataset,
             self.batch_size,
             shuffle=False,
+            collate_fn=self._collate_fn,
             num_workers=self.num_workers
         )
 

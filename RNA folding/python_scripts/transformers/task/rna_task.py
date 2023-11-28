@@ -28,13 +28,13 @@ class RNATask(pl.LightningModule):
         self.validation_step_outputs = []
 
     def on_before_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
-        batch = (batch[0], batch[1].type(dtype=torch.float32))
+        batch = (batch[0], batch[1].type(dtype=torch.float32), batch[2].type(dtype=torch.float32))
         return super().on_before_batch_transfer(batch, dataloader_idx)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        X_batch, y_batch = batch
+        X_batch, y_batch, prob_batch = batch
 
-        outputs = self.model(X_batch)
+        outputs = self.model(X_batch, probs=prob_batch)
 
         loss = self.loss_fn(outputs, y_batch)
 
@@ -47,9 +47,9 @@ class RNATask(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
-        X_batch, y_batch = batch
+        X_batch, y_batch, prob_batch = batch
 
-        outputs = self.model(X_batch)
+        outputs = self.model(X_batch, probs=prob_batch)
 
         loss = self.loss_fn(outputs, y_batch)
 
@@ -87,9 +87,9 @@ class RNATask(pl.LightningModule):
         self.validation_step_outputs.clear()
 
     def test_step(self, batch, batch_idx) -> None:
-        X_batch, y_batch = batch
+        X_batch, y_batch, prob_batch = batch
 
-        outputs = self.model(X_batch)
+        outputs = self.model(X_batch, probs=prob_batch)
 
         loss = self.loss_fn(outputs, y_batch)
 
@@ -99,9 +99,9 @@ class RNATask(pl.LightningModule):
         self.log_dict(metrics, prog_bar=True)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Any:
-        X_batch, mask_batch = batch
+        X_batch, mask_batch, prob_batch = batch
 
-        outputs = self.model(X_batch)
+        outputs = self.model(X_batch, probs=prob_batch)
 
         if self.sliced:
             outputs_type1_sliced_list = [o[0][m[0].type(torch.bool)].cpu() for o, m in zip(outputs, mask_batch)]
