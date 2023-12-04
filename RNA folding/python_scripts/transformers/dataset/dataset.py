@@ -190,12 +190,12 @@ def make_sliced_pred(data: str, data_ext: str, vocab: pd.DataFrame):
     return token_sliced
 
 class RNADataset_probs_train(Dataset):
-    def __init__(self, data: pd.DataFrame, data_ext: pd.DataFrame, path_probs: dict[str], vocab: pd.DataFrame, max_len: int) -> None:
+    def __init__(self, data: pd.DataFrame, data_ext: pd.DataFrame, prob_dir_path: str, vocab: pd.DataFrame, max_len: int) -> None:
         super().__init__()
 
         self.data = data
         self.data_ext = data_ext
-        self.path_probs = path_probs
+        self.prob_dir_path = prob_dir_path
 
         label = []
         for i in range(1, 207):
@@ -251,10 +251,7 @@ class RNADataset_probs_train(Dataset):
         label_added[:, label_mask] = -100
 
 
-        probs = make_probs_map(
-            target_path=self.path_probs[self.data.iloc[index * 2]['sequence_id']],
-            max_length=self.max_len
-        )
+        probs = torch.load(self.prob_dir_path + f"/{self.data.iloc[index]['sequence_id']}.pt")
 
 
         return torch.tensor(data_added), torch.tensor(label_added), probs
@@ -297,7 +294,7 @@ class RNADataset_probs_pred(Dataset):
 
 
         probs = make_probs_map(
-            target_path=self.path_probs[self.data.iloc[index * 2]['sequence_id']],
+            target_path=self.path_probs[self.data.iloc[index]['sequence_id']],
             max_length=self.max_len
         )
 
@@ -308,7 +305,7 @@ def make_probs_map(target_path: str, max_length: int):
     Fill probs of [max_length, max_length] from index (1) to index (len(sequence))
     '''
     with open(target_path, 'r') as file:
-        prob_matrix = torch.zeros((len(max_length), len(max_length)))
+        prob_matrix = torch.zeros((max_length, max_length))
         for line in file:
             values = line.strip().split()
             if len(values) < 3:

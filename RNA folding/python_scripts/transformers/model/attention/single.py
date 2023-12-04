@@ -7,7 +7,7 @@ class Attention(torch.nn.Module):
         super().__init__()
 
         self.dropout = torch.nn.Dropout(p=dropout)
-        self.alpha = torch.nn.Parameter(torch.tensor(1))
+        self.alpha = torch.nn.Parameter(torch.tensor(1, dtype=torch.float))
 
     def forward(self, q, k, v, mask=None, probs=None):
         '''

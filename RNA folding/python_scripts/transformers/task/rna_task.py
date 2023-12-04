@@ -28,7 +28,7 @@ class RNATask(pl.LightningModule):
         self.validation_step_outputs = []
 
     def on_before_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
-        batch = (batch[0], batch[1].type(dtype=torch.float32), batch[2].type(dtype=torch.float32))
+        batch = (batch[0], batch[1].type(dtype=torch.float16), batch[2].type(dtype=torch.float16))
         return super().on_before_batch_transfer(batch, dataloader_idx)
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
